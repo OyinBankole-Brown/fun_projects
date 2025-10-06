@@ -1,0 +1,3 @@
+[submodule "projects/pdf-to-audiobook"]
+	path = projects/pdf-to-audiobook
+	url = https://github.com/OyinBankole-Brown/pdf2audiobook
