@@ -91,8 +91,37 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    // NEW: Get all possible legal moves for a piece
+    function getPossibleMoves(row, col) {
+        const moves = [];
+        const piece = gameBoard[row][col];
+        if (!piece) return moves;
+        
+        for (let toRow = 0; toRow < 8; toRow++) {
+            for (let toCol = 0; toCol < 8; toCol++) {
+                if (row === toRow && col === toCol) continue;
+                const target = gameBoard[toRow][toCol];
+                // Can't capture own pieces
+                if (target && ((currentPlayer === 'white' && isWhite(target)) || (currentPlayer === 'black' && isBlack(target)))) continue;
+                
+                if (isLegalMove({ row, col }, { row: toRow, col: toCol }, piece)) {
+                    // Test if move leaves king in check
+                    const newBoard = gameBoard.map(r => r.slice());
+                    newBoard[toRow][toCol] = piece;
+                    newBoard[row][col] = '';
+                    if (!isInCheck(newBoard, currentPlayer)) {
+                        moves.push({ row: toRow, col: toCol });
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+
     function renderBoard() {
         board.innerHTML = '';
+        const possibleMoves = selected ? getPossibleMoves(selected.row, selected.col) : [];
+        
         for (let row = 0; row < 8; row++) {
             for (let col = 0; col < 8; col++) {
                 const square = document.createElement('div');
@@ -110,9 +139,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     square.style.outline = '3px solid orange';
                 }
 
+                // Highlight possible moves
+                const isPossibleMove = possibleMoves.some(move => move.row === row && move.col === col);
+                if (isPossibleMove) {
+                    const piece = gameBoard[row][col];
+                    if (piece) {
+                        // Capture highlight (red for enemy pieces)
+                        square.style.backgroundColor = 'rgba(255, 0, 0, 0.4)';
+                        square.style.border = '2px solid red';
+                    } else {
+                        // Move highlight (green for empty squares)
+                        square.style.backgroundColor = 'rgba(0, 255, 0, 0.4)';
+                        const dot = document.createElement('div');
+                        dot.style.width = '20px';
+                        dot.style.height = '20px';
+                        dot.style.borderRadius = '50%';
+                        dot.style.backgroundColor = 'rgba(0, 128, 0, 0.8)';
+                        square.appendChild(dot);
+                    }
+                }
+
                 const piece = gameBoard[row][col];
                 if (piece) {
-                    square.textContent = pieces[piece];
+                    const pieceSpan = document.createElement('span');
+                    pieceSpan.textContent = pieces[piece];
+                    pieceSpan.style.fontSize = '2em';
+                    pieceSpan.style.zIndex = '10';
+                    square.appendChild(pieceSpan);
                 }
 
                 square.addEventListener('click', () => handleSquareClick(row, col));
